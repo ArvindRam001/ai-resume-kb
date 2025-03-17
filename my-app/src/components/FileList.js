@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   List,
   ListItem,
@@ -7,96 +7,164 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
   Button,
   Radio,
-  Box
+  Typography,
+  Paper
 } from '@mui/material';
 import { Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
-const FileList = ({ type, onSelect, selectedFile, files, onDelete }) => {
-  const [viewFile, setViewFile] = useState(null);
+const FileList = ({ type, onFileSelect }, ref) => {
+  const [files, setFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
 
+  const fetchFiles = useCallback(async () => {
+    try {
+      const endpoint = type === 'resume' ? '/api/resumes' : '/api/job-descriptions';
+      const response = await fetch(`http://localhost:3003${endpoint}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setFiles(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      setFiles([]);
+    }
+  }, [type]);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
+
   const handleView = (file) => {
-    setViewFile(file);
+    setSelectedFile(file);
     setOpenDialog(true);
   };
 
-  const handleDelete = async (file) => {
+  const handleDelete = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3003/api/${type === 'resume' ? 'resumes' : 'job-descriptions'}/${file._id}`, {
+      const endpoint = type === 'resume' ? '/api/resumes' : '/api/job-descriptions';
+      const response = await fetch(`http://localhost:3003${endpoint}/${id}`, {
         method: 'DELETE'
       });
-
-      if (response.ok) {
-        if (selectedFile && selectedFile._id === file._id) {
-          onSelect(null);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      await fetchFiles(); // Refresh the list
+      if (selectedFile && selectedFile._id === id) {
+        setSelectedFile(null);
+        if (onFileSelect) {
+          onFileSelect(null);
         }
-        // Call the parent's refresh function
-        await onDelete();
       }
     } catch (error) {
       console.error('Error deleting file:', error);
-      alert('Failed to delete file. Please try again.');
     }
   };
 
   const handleClose = () => {
     setOpenDialog(false);
-    setViewFile(null);
+  };
+
+  const handleSelect = (file) => {
+    setSelectedFile(file);
+    if (onFileSelect) {
+      onFileSelect(file);
+    }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
+  // Add a method to refresh the file list
+  const refreshFiles = useCallback(() => {
+    fetchFiles();
+  }, [fetchFiles]);
+
+  // Expose the refresh method
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      refreshFiles
+    }),
+    [refreshFiles]
+  );
+
   return (
-    <Box sx={{ mt: 2, mb: 3 }}>
+    <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        {type === 'resume' ? 'Uploaded Resumes' : 'Uploaded Job Descriptions'}
+      </Typography>
       <List>
-        {files.map((file) => (
-          <ListItem
-            key={file._id}
-            sx={{
-              bgcolor: selectedFile && selectedFile._id === file._id ? 'action.selected' : 'transparent',
-              '&:hover': { bgcolor: 'action.hover' },
-              borderRadius: 1,
-              mb: 1
-            }}
-          >
-            <Radio
-              checked={selectedFile && selectedFile._id === file._id}
-              onChange={() => onSelect(file)}
-            />
-            <ListItemText
-              primary={file.fileName}
-              secondary={formatDate(file.uploadDate)}
-              sx={{ ml: 1 }}
-            />
-            <IconButton onClick={() => handleView(file)}>
-              <VisibilityIcon />
-            </IconButton>
-            <IconButton onClick={() => handleDelete(file)}>
-              <DeleteIcon />
-            </IconButton>
+        {Array.isArray(files) && files.length > 0 ? (
+          files.map((file) => (
+            <ListItem
+              key={file._id}
+              sx={{
+                bgcolor: selectedFile && selectedFile._id === file._id ? 'action.selected' : 'transparent',
+                '&:hover': { bgcolor: 'action.hover' },
+                borderRadius: 1,
+                mb: 1
+              }}
+            >
+              <Radio
+                checked={selectedFile && selectedFile._id === file._id}
+                onChange={() => handleSelect(file)}
+              />
+              <ListItemText
+                primary={file.fileName}
+                secondary={formatDate(file.uploadDate)}
+                sx={{ ml: 1 }}
+              />
+              <IconButton onClick={() => handleView(file)}>
+                <VisibilityIcon />
+              </IconButton>
+              <IconButton onClick={() => handleDelete(file._id)}>
+                <DeleteIcon />
+              </IconButton>
+            </ListItem>
+          ))
+        ) : (
+          <ListItem>
+            <ListItemText primary="No files uploaded yet" />
           </ListItem>
-        ))}
+        )}
       </List>
 
       <Dialog open={openDialog} onClose={handleClose} maxWidth="md" fullWidth>
-        <DialogTitle>File Content</DialogTitle>
-        <DialogContent>
-          <DialogContentText component="div" sx={{ whiteSpace: 'pre-wrap' }}>
-            {viewFile?.text}
-          </DialogContentText>
+        <DialogTitle>
+          {selectedFile?.fileName}
+          <Typography variant="body2" color="textSecondary">
+            Uploaded on {selectedFile && formatDate(selectedFile.uploadDate)}
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography
+            sx={{
+              whiteSpace: 'pre-wrap',
+              fontFamily: 'monospace',
+              fontSize: '0.9rem'
+            }}
+          >
+            {selectedFile?.text}
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Close</Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </Paper>
   );
 };
 
-export default FileList; 
+export default React.forwardRef(FileList); 

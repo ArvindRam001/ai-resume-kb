@@ -67,6 +67,8 @@ const Dashboard = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [sections, setSections] = useState(null);
   const [matchScore, setMatchScore] = useState(0);
+  const resumeListRef = React.useRef();
+  const jobListRef = React.useRef();
 
   // Fetch files on component mount
   useEffect(() => {
@@ -91,12 +93,16 @@ const Dashboard = () => {
 
   const handleResumeUpload = (data) => {
     setSelectedResume(data);
-    fetchFiles();
+    if (resumeListRef.current) {
+      resumeListRef.current.refreshFiles();
+    }
   };
 
   const handleJobDescriptionUpload = (data) => {
     setSelectedJobDescription(data);
-    fetchFiles();
+    if (jobListRef.current) {
+      jobListRef.current.refreshFiles();
+    }
   };
 
   const handleAnalyze = async () => {
@@ -161,22 +167,24 @@ const Dashboard = () => {
           ATS Resume Optimizer
         </Typography>
         
-        <FileUpload type="resume" onUpload={handleResumeUpload} />
-        <FileList 
+        <FileUpload 
           type="resume" 
-          files={resumeFiles}
-          selectedFile={selectedResume}
-          onSelect={setSelectedResume}
-          onDelete={fetchFiles}
+          onUpload={handleResumeUpload} 
+        />
+        <FileList 
+          ref={resumeListRef}
+          type="resume"
+          onFileSelect={setSelectedResume}
         />
         
-        <FileUpload type="jobDescription" onUpload={handleJobDescriptionUpload} />
+        <FileUpload 
+          type="jobDescription" 
+          onUpload={handleJobDescriptionUpload}
+        />
         <FileList 
+          ref={jobListRef}
           type="jobDescription"
-          files={jobFiles}
-          selectedFile={selectedJobDescription}
-          onSelect={setSelectedJobDescription}
-          onDelete={fetchFiles}
+          onFileSelect={setSelectedJobDescription}
         />
 
         <Paper elevation={3} sx={{ p: 3, mt: 3, textAlign: 'center' }}>
