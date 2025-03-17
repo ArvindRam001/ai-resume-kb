@@ -1,0 +1,31 @@
+{
+  "name": "airesumekb",
+  "version": "1.0.0",
+  "description": "This is my first project.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArvindRam001/AIResumeKB.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ArvindRam001/AIResumeKB/issues"
+  },
+  "homepage": "https://github.com/ArvindRam001/AIResumeKB#readme",
+  "dependencies": {
+    "axios": "^1.8.3",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mammoth": "^1.9.0",
+    "mongoose": "^8.12.1",
+    "multer": "^1.4.5-lts.1",
+    "openai": "^4.87.3",
+    "pdf-parse": "^1.1.1"
+  }
+}
