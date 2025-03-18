@@ -29,7 +29,7 @@ const FileUpload = () => {
   const handleFileSubmit = async (e) => {
     e.preventDefault();
     if (!file) {
-      setError('Please select a resume file');
+      setError('Please select a CV file');
       return;
     }
 
@@ -44,10 +44,10 @@ const FileUpload = () => {
         }
       });
       setResult(response.data);
-      setUploadedDocs(prev => [...prev, { type: 'resume', name: file.name, data: response.data }]);
+      setUploadedDocs(prev => [...prev, { type: 'cv', name: file.name, data: response.data }]);
       setError('');
     } catch (err) {
-      setError(err.response?.data?.error || 'Error uploading resume');
+      setError(err.response?.data?.error || 'Error uploading CV');
     }
     setLoading(false);
   };
@@ -179,7 +179,7 @@ const FileUpload = () => {
   return (
     <div className="upload-container">
       <div className="upload-section">
-        <h2>Upload Resume</h2>
+        <h2>Upload CV</h2>
         <form onSubmit={handleFileSubmit}>
           <input
             type="file"
@@ -187,7 +187,7 @@ const FileUpload = () => {
             accept=".pdf,.docx"
           />
           <button type="submit" disabled={loading}>
-            {loading ? 'Uploading...' : 'Upload Resume'}
+            {loading ? 'Uploading...' : 'Upload CV'}
           </button>
         </form>
       </div>
@@ -230,7 +230,7 @@ const FileUpload = () => {
             disabled={loading}
             className="analyze-btn"
           >
-            {loading ? 'Analyzing...' : 'Analyze Match'}
+            {loading ? 'Analysing...' : 'Analyse Match'}
           </button>
         </div>
       )}
