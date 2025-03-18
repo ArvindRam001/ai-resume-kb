@@ -3,13 +3,21 @@ import axios from 'axios';
 
 const FileUpload = () => {
   const [file, setFile] = useState(null);
+  const [jobFile, setJobFile] = useState(null);
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
+  const [uploadedDocs, setUploadedDocs] = useState([]);
+  const [analysisResult, setAnalysisResult] = useState(null);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
+    setError('');
+  };
+
+  const handleJobFileChange = (e) => {
+    setJobFile(e.target.files[0]);
     setError('');
   };
 
@@ -21,7 +29,7 @@ const FileUpload = () => {
   const handleFileSubmit = async (e) => {
     e.preventDefault();
     if (!file) {
-      setError('Please select a file');
+      setError('Please select a resume file');
       return;
     }
 
@@ -36,9 +44,36 @@ const FileUpload = () => {
         }
       });
       setResult(response.data);
+      setUploadedDocs(prev => [...prev, { type: 'resume', name: file.name, data: response.data }]);
       setError('');
     } catch (err) {
-      setError(err.response?.data?.error || 'Error uploading file');
+      setError(err.response?.data?.error || 'Error uploading resume');
+    }
+    setLoading(false);
+  };
+
+  const handleJobFileSubmit = async (e) => {
+    e.preventDefault();
+    if (!jobFile) {
+      setError('Please select a job description file');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', jobFile);
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/job-descriptions/upload`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      setResult(response.data);
+      setUploadedDocs(prev => [...prev, { type: 'job', name: jobFile.name, data: response.data }]);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error uploading job description');
     }
     setLoading(false);
   };
@@ -52,16 +87,93 @@ const FileUpload = () => {
 
     setLoading(true);
     try {
-      console.log('Submitting URL:', url);
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/job-descriptions/url`, { url });
-      console.log('Response:', response.data);
       setResult(response.data);
+      setUploadedDocs(prev => [...prev, { type: 'job', name: 'Job from URL', data: response.data }]);
       setError('');
     } catch (err) {
-      console.error('Error:', err);
       setError(err.response?.data?.error || 'Error processing URL');
     }
     setLoading(false);
+  };
+
+  const handleAnalyze = async () => {
+    const resume = uploadedDocs.find(doc => doc.type === 'resume');
+    const jobDesc = uploadedDocs.find(doc => doc.type === 'job');
+
+    if (!resume || !jobDesc) {
+      setError('Please upload both a resume and a job description before analyzing');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/analyze`, {
+        resumeId: resume.data.id,
+        jobDescriptionId: jobDesc.data.id
+      });
+      setAnalysisResult(response.data);
+      setError('');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error analyzing documents');
+    }
+    setLoading(false);
+  };
+
+  const renderUploadedDocs = () => {
+    if (uploadedDocs.length === 0) return null;
+
+    return (
+      <div className="uploaded-docs">
+        <h3>Uploaded Documents</h3>
+        <ul>
+          {uploadedDocs.map((doc, index) => (
+            <li key={index}>
+              {doc.name} ({doc.type})
+              <button 
+                className="remove-btn"
+                onClick={() => setUploadedDocs(prev => prev.filter((_, i) => i !== index))}
+              >
+                Remove
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const renderAnalysisResult = () => {
+    if (!analysisResult) return null;
+
+    return (
+      <div className="analysis-result">
+        <h3>Analysis Results</h3>
+        <div className="match-score">
+          <h4>Match Score: {analysisResult.matchScore}%</h4>
+        </div>
+        <div className="matching-skills">
+          <h4>Matching Skills</h4>
+          <ul>
+            {analysisResult.matchingSkills?.map((skill, index) => (
+              <li key={index}>{skill}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="missing-skills">
+          <h4>Missing Skills</h4>
+          <ul>
+            {analysisResult.missingSkills?.map((skill, index) => (
+              <li key={index}>{skill}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="recommendations">
+          <h4>Recommendations</h4>
+          <p>{analysisResult.recommendations}</p>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -75,7 +187,21 @@ const FileUpload = () => {
             accept=".pdf,.docx"
           />
           <button type="submit" disabled={loading}>
-            {loading ? 'Uploading...' : 'Upload'}
+            {loading ? 'Uploading...' : 'Upload Resume'}
+          </button>
+        </form>
+      </div>
+
+      <div className="upload-section">
+        <h2>Upload Job Description</h2>
+        <form onSubmit={handleJobFileSubmit}>
+          <input
+            type="file"
+            onChange={handleJobFileChange}
+            accept=".docx"
+          />
+          <button type="submit" disabled={loading}>
+            {loading ? 'Uploading...' : 'Upload Job Description'}
           </button>
         </form>
       </div>
@@ -90,19 +216,28 @@ const FileUpload = () => {
             placeholder="Enter job posting URL"
           />
           <button type="submit" disabled={loading}>
-            {loading ? 'Processing...' : 'Submit'}
+            {loading ? 'Processing...' : 'Submit URL'}
           </button>
         </form>
       </div>
 
-      {error && <div className="error">{error}</div>}
-      
-      {result && (
-        <div className="result">
-          <h3>Results:</h3>
-          <pre>{JSON.stringify(result, null, 2)}</pre>
+      {renderUploadedDocs()}
+
+      {uploadedDocs.length >= 2 && (
+        <div className="analyze-section">
+          <button 
+            onClick={handleAnalyze}
+            disabled={loading}
+            className="analyze-btn"
+          >
+            {loading ? 'Analyzing...' : 'Analyze Match'}
+          </button>
         </div>
       )}
+
+      {error && <div className="error">{error}</div>}
+      
+      {renderAnalysisResult()}
     </div>
   );
 };
