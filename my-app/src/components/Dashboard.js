@@ -107,14 +107,14 @@ const Dashboard = () => {
 
   const handleAnalyze = async () => {
     if (!selectedResume || !selectedJobDescription) {
-      alert('Please select both a resume and a job description to analyze');
+      alert('Please select both a résumé and a job description to analyse');
       return;
     }
 
     setIsAnalyzing(true);
     try {
       console.log('Sending analysis request...');
-      console.log('Resume:', selectedResume.fileName);
+      console.log('Résumé:', selectedResume.fileName);
       console.log('Job Description:', selectedJobDescription.fileName);
       
       const response = await fetch('http://localhost:3003/api/analyze', {
@@ -148,7 +148,7 @@ const Dashboard = () => {
       setMatchScore(score);
     } catch (error) {
       console.error('Analysis error:', error);
-      alert(`Failed to analyze: ${error.message}`);
+      alert(`Failed to analyse: ${error.message}`);
     } finally {
       setIsAnalyzing(false);
     }
@@ -164,7 +164,7 @@ const Dashboard = () => {
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom align="center">
-          ATS Resume Optimizer
+          ATS résumé optimiser
         </Typography>
         
         <FileUpload 
@@ -194,33 +194,34 @@ const Dashboard = () => {
             onClick={handleAnalyze}
             disabled={!selectedResume || !selectedJobDescription || isAnalyzing}
             startIcon={isAnalyzing ? <CircularProgress size={20} /> : <CompareArrowsIcon />}
-            sx={{ mb: 2 }}
+            sx={{ mb: 2, textTransform: 'none' }}
           >
-            {isAnalyzing ? 'Analyzing...' : 'Analyze Resume'}
+            {isAnalyzing ? 'Analysing...' : 'Compare résumé'}
           </Button>
 
-          {/* Debug Tools Section - Adding with simpler styling */}
+          {/* Debug Tools Section */}
           <Box sx={{ mt: 3, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
             <Typography variant="subtitle2" sx={{ mb: 1, color: '#666' }}>
-              Debug Tools
+              Debug tools
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
               <Button
                 variant="outlined"
                 size="small"
+                sx={{ textTransform: 'none' }}
                 onClick={() => {
                   console.log("Running test analysis...");
-                  const testText = `Match Score: 85%
-Key Skills Match: Strong match in project management
-Experience Alignment: 5 years of relevant experience
-Keywords Analysis: Found key terms like Agile, Scrum
-Specific Recommendations: Add more quantifiable achievements
-Format and Structure: Well structured resume`;
+                  const testText = `Match score: 85%
+Key skills match: Strong match in project management
+Experience alignment: 5 years of relevant experience
+Keywords analysis: Found key terms like Agile, Scrum
+Specific recommendations: Add more quantifiable achievements
+Format and structure: Well structured résumé`;
                   const sections = splitAnalysisSections(testText);
                   console.log("Test sections:", sections);
                 }}
               >
-                Test Parser
+                Run test
               </Button>
               <Button
                 variant="outlined"
@@ -233,14 +234,14 @@ Format and Structure: Well structured resume`;
                   });
                 }}
               >
-                Log State
+                View state
               </Button>
             </Box>
           </Box>
 
           {selectedResume && selectedJobDescription && (
             <Typography variant="body2" color="textSecondary" gutterBottom>
-              Analyzing {selectedResume.fileName} against {selectedJobDescription.fileName}
+              Analysing {selectedResume.fileName} against {selectedJobDescription.fileName}
             </Typography>
           )}
 
@@ -282,7 +283,7 @@ Format and Structure: Well structured resume`;
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        Key Skills Match
+                        Key skills match
                       </Typography>
                       <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-line' }}>
                         {sections.keySkills}
@@ -296,7 +297,7 @@ Format and Structure: Well structured resume`;
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        Experience Alignment
+                        Experience alignment
                       </Typography>
                       <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-line' }}>
                         {sections.experienceAlignment}
@@ -310,7 +311,7 @@ Format and Structure: Well structured resume`;
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        Keywords Analysis
+                        Keywords analysis
                       </Typography>
                       <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-line' }}>
                         {sections.keywordsAnalysis}
@@ -338,7 +339,7 @@ Format and Structure: Well structured resume`;
                   <Card>
                     <CardContent>
                       <Typography variant="h6" gutterBottom>
-                        Format and Structure
+                        Format and structure
                       </Typography>
                       <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-line' }}>
                         {sections.format}

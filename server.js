@@ -246,76 +246,168 @@ app.post('/api/analyze', async (req, res) => {
   }
 });
 
-// Function to extract job description from URL
-async function scrapeJobDescription(url) {
+// Function to clean and format extracted text
+const cleanJobDescription = (text) => {
+  return text
+    .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+    .replace(/[\r\n]+/g, '\n')  // Normalize line breaks
+    .trim();
+};
+
+// Job description URL endpoint
+app.post('/api/job-descriptions/url', async (req, res) => {
+  const { url } = req.body;
+  console.log('Scraping job description from URL:', url);
+
   try {
-    const response = await axios.get(url);
-    const $ = cheerio.load(response.data);
-    
-    // Common selectors where job descriptions are typically found
-    const selectors = [
-      'div[class*="job-description"]',
-      'div[class*="description"]',
-      'div[class*="details"]',
-      '#job-description',
-      '[data-test="job-description"]',
-      'div[class*="posting"]',
-      'article'
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL format' });
+    }
+
+    // Configure axios for the request
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      },
+      timeout: 30000,
+      maxRedirects: 5,
+      validateStatus: (status) => status >= 200 && status < 300
+    });
+
+    console.log('Response received, parsing HTML...');
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    // Try multiple selectors for job title with debug logging
+    let jobTitle = '';
+    const titleSelectors = [
+      'h1',
+      'meta[property="og:title"]',
+      'title',
+      '[data-test="job-title"]'
     ];
 
-    let content = '';
-    for (const selector of selectors) {
+    for (const selector of titleSelectors) {
       const element = $(selector);
-      if (element.length > 0) {
-        content = element.text().trim();
+      if (selector.startsWith('meta')) {
+        jobTitle = element.attr('content');
+      } else {
+        jobTitle = element.first().text();
+      }
+      if (jobTitle) {
+        console.log(`Found title using selector ${selector}:`, jobTitle);
         break;
       }
     }
 
-    if (!content) {
-      // If no specific selectors match, try getting the main content
-      content = $('main').text() || $('body').text();
+    // Try multiple selectors for company name with debug logging
+    let company = '';
+    const companySelectors = [
+      '[data-test="company-name"]',
+      'meta[property="og:site_name"]',
+      '.company-name',
+      '.employer-name'
+    ];
+
+    for (const selector of companySelectors) {
+      const element = $(selector);
+      if (selector.startsWith('meta')) {
+        company = element.attr('content');
+      } else {
+        company = element.first().text();
+      }
+      if (company) {
+        console.log(`Found company using selector ${selector}:`, company);
+        break;
+      }
     }
 
-    return content.trim();
-  } catch (error) {
-    console.error('Error scraping URL:', error);
-    throw new Error('Failed to extract job description from URL');
-  }
-}
+    // Try multiple selectors for job description with debug logging
+    let description = '';
+    const descriptionSelectors = [
+      '[data-test="job-description"]',
+      '.description__text',
+      '.job-description',
+      'article',
+      'main',
+      '.description'
+    ];
 
-// Add URL endpoint for job descriptions
-app.post('/api/job-descriptions/url', async (req, res) => {
-  try {
-    const { url } = req.body;
-    
-    if (!url) {
-      return res.status(400).json({ error: 'URL is required' });
+    for (const selector of descriptionSelectors) {
+      const element = $(selector);
+      if (element.length) {
+        description = element.text().trim();
+        console.log(`Found description using selector ${selector}, length:`, description.length);
+        if (description.length > 50) break;
+      }
     }
 
-    console.log('Scraping job description from URL:', url);
-    const text = await scrapeJobDescription(url);
-    
-    if (!text) {
-      return res.status(400).json({ error: 'Could not extract job description from URL' });
+    // If no description found, try getting content from main content area
+    if (!description || description.length < 50) {
+      console.log('Trying fallback content extraction...');
+      const mainContent = $('main').clone();
+      mainContent.find('script, style, nav, header, footer').remove();
+      description = mainContent.text().trim();
+      console.log('Fallback content length:', description.length);
     }
 
-    // Save to MongoDB
-    const jobDescription = await JobDescription.create({
-      text,
-      fileName: `Job from ${new URL(url).hostname}`,
+    // Clean up the description
+    description = description
+      .replace(/\s+/g, ' ')
+      .replace(/\n+/g, '\n')
+      .trim();
+
+    // Extract domain for company name fallback
+    if (!company) {
+      const urlObj = new URL(url);
+      company = urlObj.hostname.replace(/^www\./i, '').split('.')[0];
+      company = company.charAt(0).toUpperCase() + company.slice(1);
+      console.log('Using domain-based company name:', company);
+    }
+
+    if (!description || description.length < 50) {
+      console.log('Description too short or not found');
+      throw new Error('Could not extract job description from the URL. The page might require authentication.');
+    }
+
+    console.log('Successfully extracted job details:', {
+      titleLength: jobTitle?.length,
+      companyLength: company?.length,
+      descriptionLength: description?.length
+    });
+
+    // Create and save the job description
+    const jobDescription = new JobDescription({
+      fileName: `${jobTitle || 'Job Posting'} - ${company || 'Unknown Company'}`,
+      text: description,
+      title: jobTitle || 'Unknown Position',
+      company: company || 'Unknown Company',
       sourceUrl: url
     });
 
-    console.log('Successfully saved URL job description with ID:', jobDescription._id);
-    res.json({ 
-      message: 'Job description extracted and saved successfully', 
-      text, 
-      jobDescriptionId: jobDescription._id 
+    await jobDescription.save();
+    console.log('Job description saved to database');
+
+    res.json({
+      _id: jobDescription._id,
+      fileName: jobDescription.fileName,
+      text: jobDescription.text,
+      title: jobTitle || 'Unknown Position',
+      company: company || 'Unknown Company'
     });
   } catch (error) {
     console.error('Error processing URL:', error);
-    res.status(500).json({ error: 'Failed to process URL' });
+    res.status(500).json({ 
+      error: 'Failed to extract job description. If this is a LinkedIn URL, please make sure you are logged in and try again.',
+      details: error.message
+    });
   }
 });
 

@@ -103,7 +103,7 @@ const FileList = ({ type, onFileSelect }, ref) => {
   return (
     <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
       <Typography variant="h6" gutterBottom>
-        {type === 'resume' ? 'Uploaded Resumes' : 'Uploaded Job Descriptions'}
+        {type === 'resume' ? 'Uploaded résumés' : 'Uploaded job descriptions'}
       </Typography>
       <List>
         {Array.isArray(files) && files.length > 0 ? (
@@ -126,10 +126,10 @@ const FileList = ({ type, onFileSelect }, ref) => {
                 secondary={formatDate(file.uploadDate)}
                 sx={{ ml: 1 }}
               />
-              <IconButton onClick={() => handleView(file)}>
+              <IconButton onClick={() => handleView(file)} aria-label="View file">
                 <VisibilityIcon />
               </IconButton>
-              <IconButton onClick={() => handleDelete(file._id)}>
+              <IconButton onClick={() => handleDelete(file._id)} aria-label="Delete file">
                 <DeleteIcon />
               </IconButton>
             </ListItem>
@@ -160,7 +160,7 @@ const FileList = ({ type, onFileSelect }, ref) => {
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Close</Button>
+          <Button onClick={handleClose} sx={{ textTransform: 'none' }}>Close</Button>
         </DialogActions>
       </Dialog>
     </Paper>

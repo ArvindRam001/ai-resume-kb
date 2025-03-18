@@ -9,6 +9,14 @@ const jobDescriptionSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  title: {
+    type: String,
+    default: ''
+  },
+  company: {
+    type: String,
+    default: ''
+  },
   uploadDate: {
     type: Date,
     default: Date.now

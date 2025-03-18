@@ -12,7 +12,7 @@ import {
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import LinkIcon from '@mui/icons-material/Link';
 
-const FileUpload = ({ type, onUpload }) => {
+const FileUpload = ({ type, onUpload, onUploadComplete }) => {
   const [uploading, setUploading] = useState(false);
   const [url, setUrl] = useState('');
   const [uploadMethod, setUploadMethod] = useState('file'); // 'file' or 'url'
@@ -21,12 +21,13 @@ const FileUpload = ({ type, onUpload }) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
 
-    setUploading(true);
     try {
-      const response = await fetch(`http://localhost:3003/api/upload/${type}`, {
+      const endpoint = type === 'resume' ? '/api/upload/resume' : '/api/upload/jobDescription';
+      const response = await fetch(`http://localhost:3003${endpoint}`, {
         method: 'POST',
         body: formData,
       });
@@ -37,6 +38,9 @@ const FileUpload = ({ type, onUpload }) => {
       }
 
       onUpload(data);
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
     } catch (error) {
       console.error('Upload error:', error);
       alert('Failed to upload file. Please try again.');
@@ -47,7 +51,10 @@ const FileUpload = ({ type, onUpload }) => {
 
   const handleUrlSubmit = async (e) => {
     e.preventDefault();
-    if (!url.trim()) return;
+    if (!url.trim()) {
+      alert('Please enter a URL');
+      return;
+    }
 
     setUploading(true);
     try {
@@ -61,14 +68,18 @@ const FileUpload = ({ type, onUpload }) => {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to process URL');
+        throw new Error(data.message || data.error || 'Failed to process URL');
       }
 
       onUpload(data);
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
       setUrl(''); // Clear the URL input after successful submission
     } catch (error) {
       console.error('URL processing error:', error);
-      alert('Failed to process URL. Please try again.');
+      // Show a more informative error message
+      alert(error.message || 'Failed to process URL. Please try again.');
     } finally {
       setUploading(false);
     }
@@ -80,7 +91,7 @@ const FileUpload = ({ type, onUpload }) => {
   return (
     <Paper elevation={2} sx={{ p: 3, mt: 3 }}>
       <Typography variant="h6" gutterBottom>
-        Upload {type === 'resume' ? 'Resume' : 'Job Description'}
+        Upload {type === 'resume' ? 'résumé' : 'job description'}
       </Typography>
 
       {showUrlOption && (
@@ -89,8 +100,8 @@ const FileUpload = ({ type, onUpload }) => {
           onChange={(e, newValue) => setUploadMethod(newValue)}
           sx={{ mb: 2 }}
         >
-          <Tab label="Upload File" value="file" icon={<CloudUploadIcon />} />
-          <Tab label="Paste URL" value="url" icon={<LinkIcon />} />
+          <Tab label="Upload file" value="file" icon={<CloudUploadIcon />} />
+          <Tab label="Add URL" value="url" icon={<LinkIcon />} />
         </Tabs>
       )}
 
@@ -100,9 +111,9 @@ const FileUpload = ({ type, onUpload }) => {
           component="label"
           disabled={uploading}
           startIcon={uploading ? <CircularProgress size={20} /> : <CloudUploadIcon />}
-          sx={{ width: '100%', height: '100px' }}
+          sx={{ width: '100%', height: '100px', textTransform: 'none' }}
         >
-          {uploading ? 'Uploading...' : `Choose ${type === 'resume' ? 'Resume' : 'Job Description'}`}
+          {uploading ? 'Uploading...' : `Select a ${type === 'resume' ? 'résumé' : 'job description'}`}
           <input
             type="file"
             hidden
@@ -114,7 +125,7 @@ const FileUpload = ({ type, onUpload }) => {
         <Box component="form" onSubmit={handleUrlSubmit} sx={{ width: '100%' }}>
           <TextField
             fullWidth
-            label="Paste job posting URL"
+            label="Enter job posting URL"
             variant="outlined"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -127,8 +138,9 @@ const FileUpload = ({ type, onUpload }) => {
             type="submit"
             disabled={uploading || !url.trim()}
             startIcon={uploading ? <CircularProgress size={20} /> : <LinkIcon />}
+            sx={{ textTransform: 'none' }}
           >
-            {uploading ? 'Processing...' : 'Extract Job Description'}
+            {uploading ? 'Processing...' : 'Extract description'}
           </Button>
         </Box>
       )}
