@@ -1,8 +1,8 @@
 .App {
   text-align: center;
-  padding: 20px;
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #ffffff;
+  padding: 20px;
 }
 
 .App-logo {
@@ -17,106 +17,117 @@
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: #ffffff;
   padding: 20px;
-  color: white;
+  color: #333;
   margin-bottom: 30px;
+  border-bottom: 1px solid #eee;
 }
 
 .App-header h1 {
   margin: 0;
-  font-size: 2em;
+  font-size: 1.8em;
+  font-weight: 600;
 }
 
 .App-header p {
   margin: 10px 0 0;
-  font-size: 1.2em;
-}
-
-main {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-size: 1em;
+  color: #666;
 }
 
 .upload-container {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .upload-section {
-  padding: 20px;
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  background-color: white;
+  margin-bottom: 30px;
+  text-align: left;
 }
 
 .upload-section h2 {
-  margin-top: 0;
+  font-size: 1.2em;
   color: #333;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  font-weight: 500;
 }
 
 form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
-input[type="file"],
-input[type="url"] {
-  padding: 10px;
-  border: 1px solid #ddd;
+input[type="file"] {
+  display: none;
+}
+
+.file-input-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
-  font-size: 16px;
-  width: 100%;
+  cursor: pointer;
+  color: #495057;
+  font-size: 0.9em;
+}
+
+.file-input-label:hover {
+  background-color: #e9ecef;
+}
+
+.file-input-label svg {
+  margin-right: 8px;
+}
+
+input[type="url"] {
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.9em;
 }
 
 button {
-  padding: 12px 20px;
-  background-color: #0066cc;
+  padding: 8px 16px;
+  background-color: #0d6efd;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 0.9em;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.2s;
 }
 
 button:hover {
-  background-color: #0052a3;
+  background-color: #0b5ed7;
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background-color: #6c757d;
   cursor: not-allowed;
 }
 
 .error {
   color: #dc3545;
-  padding: 10px;
-  border: 1px solid #dc3545;
-  border-radius: 4px;
-  background-color: #fff;
-  margin: 10px 0;
+  font-size: 0.9em;
+  margin-top: 10px;
 }
 
-/* New styles for uploaded documents */
+/* Uploaded documents styling */
 .uploaded-docs {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+  margin: 20px 0;
+  text-align: left;
 }
 
 .uploaded-docs h3 {
-  margin-top: 0;
+  font-size: 1.1em;
   color: #333;
   margin-bottom: 15px;
+  font-weight: 500;
 }
 
 .uploaded-docs ul {
@@ -129,64 +140,58 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  border: 1px solid #eee;
-  margin-bottom: 10px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.uploaded-docs li:hover {
+  background-color: #e9ecef;
 }
 
 .remove-btn {
-  background-color: #dc3545;
-  padding: 5px 10px;
-  font-size: 14px;
+  background-color: transparent;
+  color: #dc3545;
+  padding: 4px 8px;
+  font-size: 0.8em;
 }
 
 .remove-btn:hover {
-  background-color: #c82333;
+  background-color: #dc3545;
+  color: white;
 }
 
-/* Analyze button section */
-.analyze-section {
-  text-align: center;
-  margin: 20px 0;
-}
-
-.analyze-btn {
-  background-color: #28a745;
-  font-size: 18px;
-  padding: 15px 30px;
-}
-
-.analyze-btn:hover {
-  background-color: #218838;
-}
-
-/* Analysis results */
+/* Analysis results styling */
 .analysis-result {
-  background-color: white;
-  padding: 25px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+  margin-top: 30px;
   text-align: left;
-}
-
-.analysis-result h3 {
-  color: #333;
-  margin-top: 0;
-  margin-bottom: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
 }
 
 .match-score {
-  background-color: #e9ecef;
-  padding: 15px;
-  border-radius: 4px;
-  margin-bottom: 20px;
+  text-align: center;
+  margin-bottom: 30px;
 }
 
 .match-score h4 {
+  font-size: 2em;
+  color: #198754;
   margin: 0;
-  color: #28a745;
-  font-size: 1.5em;
+}
+
+.score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 8px solid #198754;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
 }
 
 .matching-skills,
@@ -194,47 +199,175 @@ button:disabled {
   margin-bottom: 20px;
 }
 
-.matching-skills h4 {
-  color: #28a745;
-}
-
+.matching-skills h4,
 .missing-skills h4 {
-  color: #dc3545;
+  color: #333;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  font-weight: 500;
 }
 
 .matching-skills ul,
 .missing-skills ul {
   list-style: none;
   padding: 0;
-  margin: 10px 0;
+  margin: 0;
 }
 
 .matching-skills li,
 .missing-skills li {
-  padding: 5px 10px;
-  background-color: #f8f9fa;
+  padding: 6px 12px;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
+  font-size: 0.9em;
 }
 
 .recommendations {
-  background-color: #f8f9fa;
+  margin-top: 30px;
   padding: 15px;
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
   border-radius: 4px;
 }
 
 .recommendations h4 {
-  margin-top: 0;
   color: #333;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  font-weight: 500;
 }
 
 .recommendations p {
-  margin: 10px 0 0;
+  margin: 0;
+  font-size: 0.9em;
   line-height: 1.5;
+  color: #495057;
 }
 
-.App-link {
-  color: #61dafb;
+/* File list styling */
+.file-list {
+  margin-top: 15px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-item:hover {
+  background-color: #e9ecef;
+}
+
+.file-item.selected {
+  background-color: #e7f1ff;
+  border-color: #0d6efd;
+}
+
+.file-item input[type="radio"] {
+  margin-right: 10px;
+  cursor: pointer;
+}
+
+.file-item-icon {
+  margin-right: 10px;
+  color: #6c757d;
+  font-size: 1.2em;
+}
+
+.file-item-details {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+
+.file-item-name {
+  font-size: 0.9em;
+  color: #212529;
+  margin-bottom: 2px;
+}
+
+.file-item-meta {
+  font-size: 0.8em;
+  color: #6c757d;
+}
+
+.file-item-meta a {
+  color: #0d6efd;
+  text-decoration: none;
+}
+
+.file-item-meta a:hover {
+  text-decoration: underline;
+}
+
+.url-section {
+  margin-top: 15px;
+}
+
+.url-section form {
+  display: flex;
+  gap: 10px;
+}
+
+.url-section input[type="url"] {
+  flex-grow: 1;
+}
+
+/* Compare button styling */
+.compare-button {
+  background-color: #198754;
+  color: white;
+  padding: 12px 20px;
+  font-size: 1em;
+  border-radius: 4px;
+  margin-top: 20px;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.compare-button:hover:not(:disabled) {
+  background-color: #157347;
+}
+
+.compare-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Keywords analysis section */
+.keywords-analysis {
+  margin-top: 30px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.keywords-analysis h4 {
+  color: #333;
+  font-size: 1.1em;
+  margin-bottom: 15px;
+}
+
+.keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.keyword-item {
+  background-color: #e9ecef;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.9em;
+  color: #495057;
 }
 
 @keyframes App-logo-spin {

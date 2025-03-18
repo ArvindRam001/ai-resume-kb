@@ -2,78 +2,47 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const FileUpload = () => {
-  const [file, setFile] = useState(null);
-  const [jobFile, setJobFile] = useState(null);
-  const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState(null);
+  const [url, setUrl] = useState('');
   const [uploadedDocs, setUploadedDocs] = useState([]);
+  const [selectedCV, setSelectedCV] = useState(null);
+  const [selectedJob, setSelectedJob] = useState(null);
   const [analysisResult, setAnalysisResult] = useState(null);
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-    setError('');
-  };
-
-  const handleJobFileChange = (e) => {
-    setJobFile(e.target.files[0]);
-    setError('');
-  };
-
-  const handleUrlChange = (e) => {
-    setUrl(e.target.value);
-    setError('');
-  };
-
-  const handleFileSubmit = async (e) => {
-    e.preventDefault();
-    if (!file) {
-      setError('Please select a CV file');
-      return;
-    }
+  const handleFileChange = async (e, type) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', selectedFile);
 
     setLoading(true);
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/resumes/upload`, formData, {
+      const endpoint = type === 'cv' 
+        ? `${process.env.REACT_APP_API_URL}/api/resumes/upload`
+        : `${process.env.REACT_APP_API_URL}/api/job-descriptions/upload`;
+
+      const response = await axios.post(endpoint, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-      setResult(response.data);
-      setUploadedDocs(prev => [...prev, { type: 'cv', name: file.name, data: response.data }]);
+
+      const newDoc = {
+        id: response.data.id,
+        type,
+        name: selectedFile.name,
+        data: response.data,
+        timestamp: new Date().toLocaleString()
+      };
+
+      setUploadedDocs(prev => [...prev, newDoc]);
+      if (type === 'cv') setSelectedCV(newDoc.id);
+      else setSelectedJob(newDoc.id);
       setError('');
     } catch (err) {
-      setError(err.response?.data?.error || 'Error uploading CV');
-    }
-    setLoading(false);
-  };
-
-  const handleJobFileSubmit = async (e) => {
-    e.preventDefault();
-    if (!jobFile) {
-      setError('Please select a job description file');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', jobFile);
-
-    setLoading(true);
-    try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/job-descriptions/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      setResult(response.data);
-      setUploadedDocs(prev => [...prev, { type: 'job', name: jobFile.name, data: response.data }]);
-      setError('');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error uploading job description');
+      setError(err.response?.data?.error || `Error uploading ${type === 'cv' ? 'CV' : 'job description'}`);
     }
     setLoading(false);
   };
@@ -88,8 +57,17 @@ const FileUpload = () => {
     setLoading(true);
     try {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/job-descriptions/url`, { url });
-      setResult(response.data);
-      setUploadedDocs(prev => [...prev, { type: 'job', name: 'Job from URL', data: response.data }]);
+      const newDoc = {
+        id: response.data.id,
+        type: 'job',
+        name: 'Job from URL',
+        data: response.data,
+        timestamp: new Date().toLocaleString(),
+        url: url
+      };
+      setUploadedDocs(prev => [...prev, newDoc]);
+      setSelectedJob(newDoc.id);
+      setUrl('');
       setError('');
     } catch (err) {
       setError(err.response?.data?.error || 'Error processing URL');
@@ -98,47 +76,80 @@ const FileUpload = () => {
   };
 
   const handleAnalyze = async () => {
-    const resume = uploadedDocs.find(doc => doc.type === 'resume');
-    const jobDesc = uploadedDocs.find(doc => doc.type === 'job');
-
-    if (!resume || !jobDesc) {
-      setError('Please upload both a resume and a job description before analyzing');
+    if (!selectedCV || !selectedJob) {
+      setError('Please select both a CV and a job description to compare');
       return;
     }
 
     setLoading(true);
     try {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/analyze`, {
-        resumeId: resume.data.id,
-        jobDescriptionId: jobDesc.data.id
+        resumeId: selectedCV,
+        jobDescriptionId: selectedJob
       });
       setAnalysisResult(response.data);
       setError('');
     } catch (err) {
-      setError(err.response?.data?.error || 'Error analyzing documents');
+      setError(err.response?.data?.error || 'Error analysing documents');
     }
     setLoading(false);
   };
 
-  const renderUploadedDocs = () => {
-    if (uploadedDocs.length === 0) return null;
+  const renderDocumentList = (type) => {
+    const docs = uploadedDocs.filter(doc => doc.type === type);
+    if (docs.length === 0) return null;
 
     return (
-      <div className="uploaded-docs">
-        <h3>Uploaded Documents</h3>
-        <ul>
-          {uploadedDocs.map((doc, index) => (
-            <li key={index}>
-              {doc.name} ({doc.type})
-              <button 
-                className="remove-btn"
-                onClick={() => setUploadedDocs(prev => prev.filter((_, i) => i !== index))}
-              >
-                Remove
-              </button>
-            </li>
-          ))}
-        </ul>
+      <div className="file-list">
+        {docs.map((doc) => (
+          <div 
+            key={doc.id} 
+            className={`file-item ${
+              (type === 'cv' && selectedCV === doc.id) || 
+              (type === 'job' && selectedJob === doc.id) ? 'selected' : ''
+            }`}
+            onClick={() => {
+              if (type === 'cv') setSelectedCV(doc.id);
+              else setSelectedJob(doc.id);
+            }}
+          >
+            <input
+              type="radio"
+              name={`${type}-selection`}
+              checked={
+                (type === 'cv' && selectedCV === doc.id) ||
+                (type === 'job' && selectedJob === doc.id)
+              }
+              onChange={() => {
+                if (type === 'cv') setSelectedCV(doc.id);
+                else setSelectedJob(doc.id);
+              }}
+            />
+            <div className="file-item-icon">
+              {type === 'cv' ? '📄' : '📋'}
+            </div>
+            <div className="file-item-details">
+              <div className="file-item-name">{doc.name}</div>
+              <div className="file-item-meta">{doc.timestamp}</div>
+              {doc.url && (
+                <div className="file-item-meta">
+                  <a href={doc.url} target="_blank" rel="noopener noreferrer">View source</a>
+                </div>
+              )}
+            </div>
+            <button 
+              className="remove-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setUploadedDocs(prev => prev.filter(d => d.id !== doc.id));
+                if (type === 'cv' && selectedCV === doc.id) setSelectedCV(null);
+                if (type === 'job' && selectedJob === doc.id) setSelectedJob(null);
+              }}
+            >
+              ×
+            </button>
+          </div>
+        ))}
       </div>
     );
   };
@@ -148,29 +159,38 @@ const FileUpload = () => {
 
     return (
       <div className="analysis-result">
-        <h3>Analysis Results</h3>
         <div className="match-score">
-          <h4>Match Score: {analysisResult.matchScore}%</h4>
+          <div className="score-circle">
+            <h4>{analysisResult.matchScore}%</h4>
+          </div>
         </div>
-        <div className="matching-skills">
-          <h4>Matching Skills</h4>
-          <ul>
+
+        <div className="keywords-analysis">
+          <h4>Key skills match</h4>
+          <div className="keyword-list">
             {analysisResult.matchingSkills?.map((skill, index) => (
-              <li key={index}>{skill}</li>
+              <span key={index} className="keyword-item">{skill}</span>
             ))}
-          </ul>
+          </div>
         </div>
-        <div className="missing-skills">
-          <h4>Missing Skills</h4>
-          <ul>
-            {analysisResult.missingSkills?.map((skill, index) => (
-              <li key={index}>{skill}</li>
-            ))}
-          </ul>
+
+        <div className="experience-alignment">
+          <h4>Experience alignment</h4>
+          <p>{analysisResult.experienceAlignment}</p>
         </div>
+
         <div className="recommendations">
           <h4>Recommendations</h4>
-          <p>{analysisResult.recommendations}</p>
+          <ol>
+            {analysisResult.recommendations?.map((rec, index) => (
+              <li key={index}>{rec}</li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="format-structure">
+          <h4>Format and structure</h4>
+          <p>{analysisResult.formatFeedback}</p>
         </div>
       </div>
     );
@@ -179,60 +199,53 @@ const FileUpload = () => {
   return (
     <div className="upload-container">
       <div className="upload-section">
-        <h2>Upload CV</h2>
-        <form onSubmit={handleFileSubmit}>
+        <h2>Upload résumé</h2>
+        <label className="file-input-label">
           <input
             type="file"
-            onChange={handleFileChange}
+            onChange={(e) => handleFileChange(e, 'cv')}
             accept=".pdf,.docx"
           />
-          <button type="submit" disabled={loading}>
-            {loading ? 'Uploading...' : 'Upload CV'}
-          </button>
-        </form>
+          <span>Select a résumé</span>
+        </label>
+        {renderDocumentList('cv')}
       </div>
 
       <div className="upload-section">
-        <h2>Upload Job Description</h2>
-        <form onSubmit={handleJobFileSubmit}>
+        <h2>Upload job description</h2>
+        <label className="file-input-label">
           <input
             type="file"
-            onChange={handleJobFileChange}
+            onChange={(e) => handleFileChange(e, 'job')}
             accept=".docx"
           />
-          <button type="submit" disabled={loading}>
-            {loading ? 'Uploading...' : 'Upload Job Description'}
-          </button>
-        </form>
-      </div>
-
-      <div className="upload-section">
-        <h2>Submit Job Description URL</h2>
-        <form onSubmit={handleUrlSubmit}>
-          <input
-            type="url"
-            value={url}
-            onChange={handleUrlChange}
-            placeholder="Enter job posting URL"
-          />
-          <button type="submit" disabled={loading}>
-            {loading ? 'Processing...' : 'Submit URL'}
-          </button>
-        </form>
-      </div>
-
-      {renderUploadedDocs()}
-
-      {uploadedDocs.length >= 2 && (
-        <div className="analyze-section">
-          <button 
-            onClick={handleAnalyze}
-            disabled={loading}
-            className="analyze-btn"
-          >
-            {loading ? 'Analysing...' : 'Analyse Match'}
-          </button>
+          <span>Select a job description</span>
+        </label>
+        <div className="url-section">
+          <form onSubmit={handleUrlSubmit}>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="Or paste a job URL"
+            />
+            <button type="submit" disabled={loading}>
+              {loading ? 'Processing...' : 'Submit URL'}
+            </button>
+          </form>
         </div>
+        {renderDocumentList('job')}
+      </div>
+
+      {(uploadedDocs.filter(d => d.type === 'cv').length > 0 && 
+        uploadedDocs.filter(d => d.type === 'job').length > 0) && (
+        <button 
+          onClick={handleAnalyze}
+          disabled={loading || !selectedCV || !selectedJob}
+          className="compare-button"
+        >
+          {loading ? 'Analysing...' : 'Compare Match'}
+        </button>
       )}
 
       {error && <div className="error">{error}</div>}
