@@ -7,8 +7,8 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>AI Resume Analyzer</h1>
-        <p>Upload your resume or job description URL to get started</p>
+        <h1>AI CV Analyser</h1>
+        <p>Upload your CV or job description URL to get started</p>
       </header>
       <main>
         <FileUpload />
